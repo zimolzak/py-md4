@@ -12,17 +12,14 @@ def md4_padding(message_readonly, extra_len):
     mod_length = len(message) % 64
     if mod_length < 56:
         message += [0x00] * (56 - mod_length)
-        #print "added", 56 - mod_length #deleteme
     else:
         message += [0x00] * (120 - mod_length)
     # add the length as a 64 bit big endian
-    length = [ord(c) for c in pack('>Q',
-                                   (original_length * 8) & 0xFFFFFFFFFFFFFFFF)]
+    length = [ord(c) for c in
+              pack('>Q',
+                   ((original_length + extra_len) * 8) & 0xFFFFFFFFFFFFFFFF)]
     # add the two words least significant first
     message.extend(length[::-1])
-    #print message #deleteme
-    #print "lmi", len(message) #deleteme
-    #print "lpi", len(message[original_length:]) #deleteme
     return message[original_length:]
 
 def make_words(byte_array):
@@ -38,9 +35,7 @@ def make_words(byte_array):
 def md4(message, debug=False):
     """https://tools.ietf.org/html/rfc1320"""
     message = [ord(c) for c in message]
-    #print "!! lm", len(message) #deleteme
     message.extend(md4_padding(message, 0))
-    #print "lm", len(message) #deleteme
 
     if debug:
         print "\nafter padding {0}".format([[hex(b) for b in message]])
