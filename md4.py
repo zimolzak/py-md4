@@ -2,7 +2,18 @@ from struct import pack
 from binascii import hexlify
 import copy
 
-def md4_padding(message_readonly, extra_len):
+def restart_md4(hh, newmessage, extra_len, debug=False):
+    """Add arbitrary data to a MD4-signed message, and make it look like
+    it was signed by the same key as the original message. In other
+    words, perform length extension attack on MD4.
+    """
+    h0 = (hh >> 96) & 0xffffffff ## FIXME! endianness is broken
+    h1 = (hh >> 64) & 0xffffffff
+    h2 = (hh >> 32) & 0xffffffff
+    h3 = hh & 0xffffffff
+    return md4_fixated(newmessage, h0, h1, h2, h3, extra_len, debug)
+
+def md4_padding(message_readonly, extra_len, debug=False):
     message = copy.copy(message_readonly)
     """In this implementation, Message comes in as list of integers."""
     original_length = len(message) # need to remember this for later
@@ -18,6 +29,9 @@ def md4_padding(message_readonly, extra_len):
     length = [ord(c) for c in
               pack('>Q',
                    ((original_length + extra_len) * 8) & 0xFFFFFFFFFFFFFFFF)]
+    if debug:
+        print "length in Byte", (original_length + extra_len)
+        print "length array", length
     # add the two words least significant first
     message.extend(length[::-1])
     return message[original_length:]
@@ -39,9 +53,13 @@ def md4(message, debug=False):
                        0, debug)
 
 def md4_fixated(message, h0, h1, h2, h3, extra_len, debug=False):
-    """https://tools.ietf.org/html/rfc1320"""
+    """https://tools.ietf.org/html/rfc1320
+
+    Expects message as a STRING! Returns hex character string, as in
+    '06f7abf8654'.
+    """
     message = [ord(c) for c in message]
-    message.extend(md4_padding(message, extra_len))
+    message.extend(md4_padding(message, extra_len, debug))
 
     if debug:
         print "\nafter padding {0}".format([[hex(b) for b in message]])
