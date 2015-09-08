@@ -33,18 +33,24 @@ def make_words(byte_array):
     return res
 
 def md4(message, debug=False):
+    return md4_fixated(message,
+                       0x67452301, 0xEFCDAB89,
+                       0x98BADCFE, 0x10325476,
+                       0, debug)
+
+def md4_fixated(message, h0, h1, h2, h3, extra_len, debug=False):
     """https://tools.ietf.org/html/rfc1320"""
     message = [ord(c) for c in message]
-    message.extend(md4_padding(message, 0))
+    message.extend(md4_padding(message, extra_len))
 
     if debug:
         print "\nafter padding {0}".format([[hex(b) for b in message]])
 
     # initialize the registers to magic values
-    A = 0x67452301
-    B = 0xefcdab89
-    C = 0x98badcfe
-    D = 0x10325476
+    A = h0
+    B = h1
+    C = h2
+    D = h3
 
     # define F, G, and H
     def F(x,y,z): return ((x & y) | ((~x) & z))
