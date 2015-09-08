@@ -2,15 +2,37 @@ from struct import pack
 from binascii import hexlify
 import copy
 
-def restart_md4(hh, newmessage, extra_len, debug=False):
+def reverse_bytes(word):
+    """Takes in hex character string"""
+    assert len(word) == 8
+    assert type(word) == type(str())
+    result = ""
+    for i in range(4):
+        result += word[(3-i) * 2 : (4-i) * 2]
+    return result
+
+
+def restart_md4(hh_str, newmessage, extra_len, debug=False):
     """Add arbitrary data to a MD4-signed message, and make it look like
     it was signed by the same key as the original message. In other
     words, perform length extension attack on MD4.
+
+    Importantly, this takes in a STRING of hex chars, in order to fix
+    the endian-ness.
     """
-    h0 = (hh >> 96) & 0xffffffff ## FIXME! endianness is broken
-    h1 = (hh >> 64) & 0xffffffff
-    h2 = (hh >> 32) & 0xffffffff
-    h3 = hh & 0xffffffff
+
+    assert len(hh_str) == 32 # 32 hex char = 128 bit digest
+    registers = [0,0,0,0]
+    for i in range(4):
+        word = hh_str[i*8 : (i+1)*8]
+        print "t", word, reverse_bytes(word) #deleteme
+        registers[i] = int(reverse_bytes(word), 16)
+    [h0, h1, h2, h3] = registers
+    
+#    h0 = (hh >> 96) & 0xffffffff ## FIXME! endianness is broken
+#    h1 = (hh >> 64) & 0xffffffff
+#    h2 = (hh >> 32) & 0xffffffff
+#    h3 = hh & 0xffffffff
     return md4_fixated(newmessage, h0, h1, h2, h3, extra_len, debug)
 
 def md4_padding(message_readonly, extra_len, debug=False):
