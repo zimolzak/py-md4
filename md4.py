@@ -1,48 +1,46 @@
 from struct import pack
 from binascii import hexlify
+import copy
 
+def md4_padding(message_readonly, extra_len):
+    message = copy.copy(message_readonly)
+    """In this implementation, Message comes in as list of integers."""
+    original_length = len(message) # need to remember this for later
+    # add a '1' bit via a byte
+    message += [0x80]
+    # padding to 448 % 512 bits (56 % 64 byte)
+    mod_length = len(message) % 64
+    if mod_length < 56:
+        message += [0x00] * (56 - mod_length)
+        #print "added", 56 - mod_length #deleteme
+    else:
+        message += [0x00] * (120 - mod_length)
+    # add the length as a 64 bit big endian
+    length = [ord(c) for c in pack('>Q',
+                                   (original_length * 8) & 0xFFFFFFFFFFFFFFFF)]
+    # add the two words least significant first
+    message.extend(length[::-1])
+    #print message #deleteme
+    #print "lmi", len(message) #deleteme
+    #print "lpi", len(message[original_length:]) #deleteme
+    return message[original_length:]
 
 def make_words(byte_array):
-
     res = []
-
     for i in xrange(0, len(byte_array), 4):
-
         index = i/4
         res.append(byte_array[i+3])
         res[index] = (res[index] << 8) | byte_array[i+2]
         res[index] = (res[index] << 8) | byte_array[i+1]
         res[index] = (res[index] << 8) | byte_array[i]
-
     return res
-        
-
 
 def md4(message, debug=False):
-    """
-    https://tools.ietf.org/html/rfc1320
-    """
-
-    # we'll need to remember this for later
-    original_length = len(message)
-
+    """https://tools.ietf.org/html/rfc1320"""
     message = [ord(c) for c in message]
-
-    # add a '1' bit via a byte
-    message += [0x80]
-
-    mod_length = len(message) % 64
-    # padding to 448 % 512 bits (56 % 64 byte)
-    if mod_length < 56:
-        message += [0x00] * (56 - mod_length)
-    else:
-        message += [0x00] * (120 - mod_length)
-
-    # add the length as a 64 bit big endian, use lower order bits if length overflows 2^64
-    length = [ord(c) for c in pack('>Q', (original_length * 8) & 0xFFFFFFFFFFFFFFFF)]
-
-    # add the two words least significant first
-    message.extend(length[::-1])
+    #print "!! lm", len(message) #deleteme
+    message.extend(md4_padding(message, 0))
+    #print "lm", len(message) #deleteme
 
     if debug:
         print "\nafter padding {0}".format([[hex(b) for b in message]])
