@@ -1,5 +1,6 @@
+from __future__ import print_function
 from md4 import md4
-
+import sys
 
 md4_tests = [
     ('', '31d6cfe0d16ae931b73c59d7e0c089c0'),
@@ -14,8 +15,10 @@ md4_tests = [
 ]
 
 for test in md4_tests:
-
     if md4(test[0]) == test[1]:
-        print "[+] {0}".format(test[0])
+        print("[+] {0}".format(test[0]))
     else:
-        print "[-] {0}".format(test[0])
+        print("[-] {0}".format(test[0]))
+        assert 0
+
+print("Passed assertions: " + __file__, file=sys.stderr)
